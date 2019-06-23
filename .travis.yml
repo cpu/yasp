@@ -1,0 +1,19 @@
+language: go
+
+sudo: true
+
+go:
+  - "1.12.x"
+
+env:
+  - GO111MODULE=on
+
+install:
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.13.2
+  - go install -v -mod=vendor ./...
+
+script:
+  - set -e
+  - go mod download
+  - golangci-lint run
+  - go test -mod=vendor -v -race ./...
