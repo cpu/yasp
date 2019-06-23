@@ -3,6 +3,11 @@ language: go
 go:
   - "1.12.x"
 
+addons:
+  apt_packages:
+    - libgl1-mesa-dev
+    - xorg-dev
+
 env:
   - GO111MODULE=on
 
