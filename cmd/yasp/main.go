@@ -6,9 +6,8 @@ import (
 	"os"
 
 	"github.com/cpu/yasp"
-	"github.com/faiface/pixel"
+	"github.com/cpu/yasp/game"
 	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
 )
 
 const (
@@ -16,21 +15,8 @@ const (
 )
 
 var (
-	configFile   = flag.String("config", "test/config.yml", "YAML config file path")
-	windowConfig = pixelgl.WindowConfig{}
+	configFile = flag.String("config", "test/config.yml", "YAML config file path")
 )
-
-func run() {
-	win, err := pixelgl.NewWindow(windowConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	win.Clear(colornames.Greenyellow)
-	for !win.Closed() {
-		win.Update()
-	}
-}
 
 func main() {
 	flag.Parse()
@@ -47,14 +33,11 @@ func main() {
 
 	fmt.Println(title)
 	c, err := yasp.LoadConfigFile(*configFile)
-	ifErrExit(err, "failed to load YASP config from %q: %v\n", *configFile, err)
+	ifErrExit(err, "failed to load config from %q: %v\n", *configFile, err)
 
-	windowConfig = pixelgl.WindowConfig{
-		Title:  title,
-		Bounds: pixel.R(0, 0, float64(c.WinWidth), float64(c.WinHeight)),
-		VSync:  c.VSync,
-	}
+	g, err := game.New(c)
+	ifErrExit(err, "failed to construct game: %q\n", err)
 
-	pixelgl.Run(run)
+	pixelgl.Run(g.Run)
 	fmt.Println("... goodbye for now")
 }
