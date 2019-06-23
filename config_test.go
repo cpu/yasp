@@ -57,17 +57,17 @@ func TestLoadConfigFile(t *testing.T) {
 		expectedConfig *Config
 	}{
 		{
-			name:        "bad YAML",
+			name:        "Bad YAML",
 			data:        []byte("["),
 			expectError: "yaml: line 1: did not find expected node content",
 		},
 		{
-			name:        "invalid config",
+			name:        "Invalid config",
 			data:        []byte(""),
 			expectError: "invalid WinWidth",
 		},
 		{
-			name: "valid config",
+			name: "Valid config",
 			data: []byte("winwidth: 10\nwinheight: 20\n"),
 			expectedConfig: &Config{
 				WinWidth:  10,
