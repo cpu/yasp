@@ -7,9 +7,9 @@ import (
 
 	"github.com/cpu/yasp"
 	"github.com/cpu/yasp/assets"
+	"github.com/cpu/yasp/dungeon"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
 )
 
 const (
@@ -41,6 +41,10 @@ type Game struct {
 	camZoomSpeed float64
 
 	p player
+
+	d dungeon.Map
+
+	dBatch *pixel.Batch
 }
 
 func New(c *yasp.Config) (*Game, error) {
@@ -59,6 +63,8 @@ func New(c *yasp.Config) (*Game, error) {
 		return nil, err
 	}
 
+	dBatch := pixel.NewBatch(&pixel.TrianglesData{}, tilemap.Picture)
+
 	characterTM, err := assets.LoadTilemapFile("characters", characterTimemapFile)
 	if err != nil {
 		return nil, err
@@ -70,6 +76,8 @@ func New(c *yasp.Config) (*Game, error) {
 			characterTM.Tiles[defaultPlayerTile].Rect),
 		matrix: pixel.IM.Scaled(pixel.ZV, tileScale),
 	}
+
+	d := dungeon.One
 
 	return &Game{
 		config:           c,
@@ -84,7 +92,9 @@ func New(c *yasp.Config) (*Game, error) {
 		camZoom:      1.0,
 		camZoomSpeed: 1.2,
 
-		p: p,
+		p:      p,
+		d:      d,
+		dBatch: dBatch,
 	}, nil
 }
 
@@ -94,6 +104,10 @@ func (g *Game) Run() {
 		panic(err)
 	}
 	g.win = win
+
+	wall := pixel.NewSprite(
+		g.tilemap.Picture,
+		g.tilemap.Tiles[0].Rect)
 
 	for !g.win.Closed() {
 		dt := time.Since(g.lastFrame).Seconds()
@@ -105,9 +119,21 @@ func (g *Game) Run() {
 
 		g.readButtons(dt)
 
-		g.win.Clear(colornames.Black)
+		g.dBatch.Clear()
 
-		g.p.sprite.Draw(g.win, g.p.matrix)
+		m := pixel.IM.Scaled(pixel.ZV, tileScale)
+		for y := 0; y < g.d.Height; y++ {
+			for x := 0; y < g.d.Width; x++ {
+				wall.Draw(g.dBatch, m)
+				m = m.Moved(pixel.V(0, float64(x)*assets.TileWidth))
+			}
+			m = m.Moved(pixel.V(0, float64(y)*assets.TileHeight))
+		}
+		g.dBatch.Draw(g.win)
+
+		//g.win.Clear(colornames.Black)
+
+		//g.p.sprite.Draw(g.win, g.p.matrix)
 
 		g.win.Update()
 	}
