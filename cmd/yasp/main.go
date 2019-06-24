@@ -6,8 +6,6 @@ import (
 	"os"
 
 	"github.com/cpu/yasp"
-	"github.com/cpu/yasp/game"
-	"github.com/faiface/pixel/pixelgl"
 )
 
 const (
@@ -35,9 +33,6 @@ func main() {
 	c, err := yasp.LoadConfigFile(*configFile)
 	ifErrExit(err, "failed to load config from %q: %v\n", *configFile, err)
 
-	g, err := game.New(c)
-	ifErrExit(err, "failed to construct game: %q\n", err)
-
-	pixelgl.Run(g.Run)
+	fmt.Printf("%#v\n", c)
 	fmt.Println("... goodbye for now")
 }

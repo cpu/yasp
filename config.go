@@ -18,9 +18,6 @@ type Config struct {
 	WinWidth int
 	// WinHeight is the YASP window height.
 	WinHeight int
-
-	// VSync controls refresh synchronization.
-	VSync bool
 }
 
 // valid determines if the Config holds valid values.
