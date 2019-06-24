@@ -1,26 +1,13 @@
 package dungeon
 
-import "github.com/gdamore/tcell"
+import "github.com/cpu/yasp/view"
 
 var (
-	paleGreen = tcell.StyleDefault.
-			Foreground(tcell.ColorPaleGreen).
-			Background(tcell.ColorBlack)
-	green = tcell.StyleDefault.
-		Foreground(tcell.ColorGreen).
-		Background(tcell.ColorBlack)
-	chocolate = tcell.StyleDefault.
-			Foreground(tcell.ColorChocolate).
-			Background(tcell.ColorBlack)
-	brown = tcell.StyleDefault.
-		Foreground(tcell.ColorBrown).
-		Background(tcell.ColorBlack)
-
 	TileMap = map[TileCode]Tile{
-		0: {repr: ".", Style: green},
-		1: {repr: "#", Style: chocolate},
-		2: {repr: "~", Style: paleGreen},
-		3: {repr: "=", Style: brown},
+		0: {repr: ".", Style: view.Green},
+		1: {repr: "#", Style: view.Chocolate},
+		2: {repr: "~", Style: view.PaleGreen},
+		3: {repr: "=", Style: view.Brown},
 	}
 	One = Map{
 		Width:  32,

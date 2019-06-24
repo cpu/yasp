@@ -8,9 +8,41 @@ import (
 	runewidth "github.com/mattn/go-runewidth"
 )
 
+var (
+	DefaultStyle = Style{
+		style: tcell.StyleDefault.
+			Foreground(tcell.ColorWhite).
+			Background(tcell.ColorBlack),
+	}
+	PaleGreen = Style{
+		style: tcell.StyleDefault.
+			Foreground(tcell.ColorPaleGreen).
+			Background(tcell.ColorBlack),
+	}
+	Green = Style{
+		style: tcell.StyleDefault.
+			Foreground(tcell.ColorGreen).
+			Background(tcell.ColorBlack),
+	}
+	Chocolate = Style{
+		style: tcell.StyleDefault.
+			Foreground(tcell.ColorChocolate).
+			Background(tcell.ColorBlack),
+	}
+	Brown = Style{
+		style: tcell.StyleDefault.
+			Foreground(tcell.ColorBrown).
+			Background(tcell.ColorBlack),
+	}
+)
+
 type InputHandler func(ev *tcell.EventKey)
 
 type TickHandler func()
+
+type Style struct {
+	style tcell.Style
+}
 
 type Display struct {
 	inputHandler InputHandler
@@ -22,7 +54,7 @@ type Display struct {
 // PrintFixed prints a msg to the provided tcell.Screen in the given style. The
 // position is fixed at x,y and takes into account the rune width of the msg
 // content.
-func (d Display) PrintFixed(x, y int, style tcell.Style, msg string) {
+func (d Display) PrintFixed(x, y int, style Style, msg string) {
 	for _, c := range msg {
 		var comb []rune
 		w := runewidth.RuneWidth(c)
@@ -31,7 +63,7 @@ func (d Display) PrintFixed(x, y int, style tcell.Style, msg string) {
 			c = ' '
 			w = 1
 		}
-		d.s.SetContent(x, y, c, comb, style)
+		d.s.SetContent(x, y, c, comb, style.style)
 		x += w
 	}
 }
@@ -80,7 +112,7 @@ loop:
 		d.tickHandler()
 	}
 
-	d.Close()
+	d.s.Fini()
 }
 
 func (d Display) Size() (int, int) {
@@ -91,16 +123,11 @@ func (d Display) Clear() {
 	d.s.Clear()
 }
 
-func (d Display) Close() {
-	d.s.Fini()
-}
-
 func (d Display) Show() {
 	d.s.Show()
 }
 
 func New(h InputHandler, t TickHandler) (*Display, error) {
-
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, err := tcell.NewScreen()
 	if err != nil {

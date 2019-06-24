@@ -9,16 +9,10 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-var (
-	DefaultStyle = tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
-)
-
 type Player struct {
 	x     int
 	y     int
-	Style tcell.Style
+	Style view.Style
 }
 
 func (p Player) String() string {
@@ -58,7 +52,7 @@ type State struct {
 func NewGame() State {
 	return State{
 		P: Player{
-			Style: DefaultStyle,
+			Style: view.DefaultStyle,
 			x:     10,
 			y:     10,
 		},
@@ -75,7 +69,7 @@ func (state *State) PrintDebug() {
 		pX, pY := state.P.Pos()
 		dbg := fmt.Sprintf("p x: %d y: %d", pX, pY)
 		_, maxY := state.Display.Size()
-		state.Display.PrintFixed(0, maxY-1, DefaultStyle, dbg)
+		state.Display.PrintFixed(0, maxY-1, view.DefaultStyle, dbg)
 	}
 }
 

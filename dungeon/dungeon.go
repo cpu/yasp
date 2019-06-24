@@ -4,13 +4,13 @@ package dungeon
 import (
 	"strings"
 
-	"github.com/gdamore/tcell"
+	"github.com/cpu/yasp/view"
 )
 
 type TileCode int
 
 type Tile struct {
-	Style tcell.Style
+	Style view.Style
 	repr  string
 }
 
