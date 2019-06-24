@@ -1,7 +1,22 @@
 // package dungeon provides dungeon maps.
 package dungeon
 
+import (
+	"strings"
+
+	"github.com/gdamore/tcell"
+)
+
 type TileCode int
+
+type Tile struct {
+	Style tcell.Style
+	repr  string
+}
+
+func (t Tile) String() string {
+	return t.repr
+}
 
 type Map struct {
 	Width  int
@@ -10,16 +25,21 @@ type Map struct {
 	Tiles []TileCode
 }
 
-var (
-	One = Map{
-		Width:  5,
-		Height: 5,
-		Tiles: []TileCode{
-			1, 2, 2, 2, 1,
-			3, 0, 0, 0, 3,
-			3, 0, 0, 0, 3,
-			3, 0, 0, 0, 3,
-			1, 2, 2, 2, 1,
-		},
+func (m Map) String() string {
+	var mapStr strings.Builder
+
+	for y := 0; y < m.Height; y++ {
+		for x := 0; x < m.Width; x++ {
+			code := m.Tiles[x+(y*m.Width)]
+			chr := TileMap[code]
+			mapStr.WriteString(chr.String())
+		}
+		mapStr.WriteString("\n")
 	}
-)
+
+	return mapStr.String()
+}
+
+func LookupTile(c TileCode) Tile {
+	return TileMap[c]
+}
