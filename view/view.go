@@ -46,6 +46,9 @@ var (
 	InputKeyDown = InputEvent{
 		ev: tcell.KeyDown,
 	}
+	InputDebug = InputEvent{
+		ev: tcell.KeyCtrlD,
+	}
 )
 
 type InputHandler func(ev InputEvent)
@@ -99,6 +102,8 @@ func (d *Display) pollForever() {
 					/*
 					* Game controls
 					 */
+				case tcell.KeyCtrlD:
+					d.inputHandler(InputDebug)
 				case tcell.KeyRight:
 					d.inputHandler(InputKeyRight)
 				case tcell.KeyLeft:
@@ -125,7 +130,10 @@ loop:
 			break loop
 		case <-time.After(time.Millisecond * 50):
 		}
+
+		d.s.Clear()
 		d.tickHandler()
+		d.s.Show()
 	}
 
 	d.s.Fini()
@@ -133,14 +141,6 @@ loop:
 
 func (d Display) Size() (int, int) {
 	return d.s.Size()
-}
-
-func (d Display) Clear() {
-	d.s.Clear()
-}
-
-func (d Display) Show() {
-	d.s.Show()
 }
 
 func New(h InputHandler, t TickHandler) (*Display, error) {

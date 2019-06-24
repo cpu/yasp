@@ -77,6 +77,8 @@ func (state *State) HandleInput(ev view.InputEvent) {
 	pX, pY := state.P.Pos()
 
 	switch {
+	case ev == view.InputDebug:
+		state.Debug = !state.Debug
 	case ev == view.InputKeyRight:
 		if pX+1 < maxX {
 			state.P.MoveTo(pX+1, pY)
@@ -97,8 +99,6 @@ func (state *State) HandleInput(ev view.InputEvent) {
 }
 
 func (state *State) Tick() {
-	state.Display.Clear()
-
 	for y := 0; y < state.Map.Height; y++ {
 		for x := 0; x < state.Map.Width; x++ {
 			index := x + (y * state.Map.Width)
@@ -107,7 +107,8 @@ func (state *State) Tick() {
 		}
 	}
 
+	state.PrintDebug()
+
 	pX, pY := state.P.Pos()
 	state.Display.PrintFixed(pX, pY, state.P.Style, "@")
-	state.Display.Show()
 }
