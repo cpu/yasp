@@ -6,7 +6,6 @@ import (
 
 	"github.com/cpu/yasp/dungeon"
 	"github.com/cpu/yasp/view"
-	"github.com/gdamore/tcell"
 )
 
 type Player struct {
@@ -73,24 +72,24 @@ func (state *State) PrintDebug() {
 	}
 }
 
-func (state *State) HandleInput(ev *tcell.EventKey) {
+func (state *State) HandleInput(ev view.InputEvent) {
 	maxX, maxY := state.Display.Size()
 	pX, pY := state.P.Pos()
 
-	switch ev.Key() {
-	case tcell.KeyRight:
+	switch {
+	case ev == view.InputKeyRight:
 		if pX+1 < maxX {
 			state.P.MoveTo(pX+1, pY)
 		}
-	case tcell.KeyLeft:
+	case ev == view.InputKeyLeft:
 		if pX-1 >= 0 {
 			state.P.MoveTo(pX-1, pY)
 		}
-	case tcell.KeyUp:
+	case ev == view.InputKeyUp:
 		if pY-1 >= 0 {
 			state.P.MoveTo(pX, pY-1)
 		}
-	case tcell.KeyDown:
+	case ev == view.InputKeyDown:
 		if pY+1 < maxY {
 			state.P.MoveTo(pX, pY+1)
 		}

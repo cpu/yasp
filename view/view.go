@@ -34,14 +34,30 @@ var (
 			Foreground(tcell.ColorBrown).
 			Background(tcell.ColorBlack),
 	}
+	InputKeyRight = InputEvent{
+		ev: tcell.KeyRight,
+	}
+	InputKeyLeft = InputEvent{
+		ev: tcell.KeyLeft,
+	}
+	InputKeyUp = InputEvent{
+		ev: tcell.KeyUp,
+	}
+	InputKeyDown = InputEvent{
+		ev: tcell.KeyDown,
+	}
 )
 
-type InputHandler func(ev *tcell.EventKey)
+type InputHandler func(ev InputEvent)
 
 type TickHandler func()
 
 type Style struct {
 	style tcell.Style
+}
+
+type InputEvent struct {
+	ev tcell.Key
 }
 
 type Display struct {
@@ -84,13 +100,13 @@ func (d *Display) pollForever() {
 					* Game controls
 					 */
 				case tcell.KeyRight:
-					fallthrough
+					d.inputHandler(InputKeyRight)
 				case tcell.KeyLeft:
-					fallthrough
+					d.inputHandler(InputKeyLeft)
 				case tcell.KeyUp:
-					fallthrough
+					d.inputHandler(InputKeyUp)
 				case tcell.KeyDown:
-					d.inputHandler(ev)
+					d.inputHandler(InputKeyDown)
 				}
 			case *tcell.EventResize:
 				d.s.Sync()
