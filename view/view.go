@@ -67,13 +67,50 @@ type InputEvent struct {
 }
 
 type mainWindow struct {
-	dungeonView *views.CellView
-	keybar      *views.SimpleStyledText
-	status      *views.SimpleStyledTextBar
-	display     *Display
-	model       *dungeonModel
+	content       *views.BoxLayout
+	dungeonView   *views.CellView
+	dungeonModel  *dungeonModel
+	questlogView  *views.CellView
+	questlogModel *questlogModel
+	keybar        *views.SimpleStyledText
+	status        *views.SimpleStyledTextBar
+	display       *Display
 
 	views.Panel
+}
+
+type questlogModel struct {
+	width  int
+	height int
+	items  []string
+}
+
+func (m *questlogModel) GetBounds() (int, int) {
+	return m.width, m.height
+}
+
+func (m *questlogModel) MoveCursor(_, _ int) {
+}
+
+func (m *questlogModel) GetCursor() (int, int, bool, bool) {
+	return 0, 0, false, true
+}
+
+func (m *questlogModel) SetCursor(_, _ int) {
+}
+
+func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
+	var ch rune
+	if y >= len(m.items) {
+		return ch, DefaultStyle.style, nil, 1
+	}
+	item := m.items[y]
+
+	if x >= len(item) {
+		return ch, DefaultStyle.style, nil, 1
+	}
+
+	return rune(item[x]), Green.style, nil, 1
 }
 
 type dungeonModel struct {
@@ -188,19 +225,19 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 				app.Quit()
 				return true
 			case 'S', 's':
-				win.model.hide = false
+				win.dungeonModel.hide = false
 				win.updateKeys()
 				return true
 			case 'H', 'h':
-				win.model.hide = true
+				win.dungeonModel.hide = true
 				win.updateKeys()
 				return true
 			case 'E', 'e':
-				win.model.enab = true
+				win.dungeonModel.enab = true
 				win.updateKeys()
 				return true
 			case 'D', 'd':
-				win.model.enab = false
+				win.dungeonModel.enab = false
 				win.updateKeys()
 				return true
 			}
@@ -211,12 +248,12 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 }
 
 func (win *mainWindow) Draw() {
-	win.status.SetLeft(win.model.loc)
+	win.status.SetLeft(win.dungeonModel.loc)
 	win.Panel.Draw()
 }
 
 func (win *mainWindow) updateKeys() {
-	m := win.model
+	m := win.dungeonModel
 	w := "[%AQ%N] Quit"
 	if !m.enab {
 		w += "  [%AE%N] Enable cursor"
@@ -256,8 +293,61 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 	app := &views.Application{}
 	window := &mainWindow{
 		display: d,
-		model: &dungeonModel{
+		dungeonModel: &dungeonModel{
 			mapp: dungeon.One,
+		},
+		questlogModel: &questlogModel{
+			width: dungeon.One.Width,
+			items: []string{
+				"You were eaten by a grue.",
+				"A pox on your soul was lifted.",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"You are now a chicken",
+				"and I am too",
+			},
 		},
 	}
 
@@ -282,18 +372,26 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 		Background(tcell.ColorYellow).
 		Foreground(tcell.ColorBlack))
 
-	window.status.SetLeft("My status is here.")
-	window.status.SetRight("%Uyasp%N demo!")
-	window.status.SetCenter("Cen%ST%Ner")
+	window.status.SetLeft("Player x, y")
+	window.status.SetRight("%U2019%N")
+	window.status.SetCenter("%U@cpu%N")
 
 	window.dungeonView = views.NewCellView()
-	window.dungeonView.SetModel(window.model)
+	window.dungeonView.SetModel(window.dungeonModel)
 	window.dungeonView.SetStyle(tcell.StyleDefault.
 		Background(tcell.ColorBlack))
 
+	window.questlogView = views.NewCellView()
+	window.questlogView.SetModel(window.questlogModel)
+	window.questlogView.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlack))
+
+	window.content = views.NewBoxLayout(views.Vertical)
+	window.content.AddWidget(window.dungeonView, 1.0)
+	window.content.AddWidget(window.questlogView, 1.0)
+
 	window.SetMenu(window.keybar)
 	window.SetTitle(title)
-	window.SetContent(window.dungeonView)
+	window.SetContent(window.content)
 	window.SetStatus(window.status)
 
 	app.SetStyle(tcell.StyleDefault.
