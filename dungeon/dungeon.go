@@ -3,15 +3,12 @@ package dungeon
 
 import (
 	"strings"
-
-	"github.com/cpu/yasp/view"
 )
 
 type TileCode int
 
 type Tile struct {
-	Style view.Style
-	repr  string
+	repr string
 }
 
 func (t Tile) String() string {
@@ -23,6 +20,10 @@ type Map struct {
 	Height int
 
 	Tiles []TileCode
+}
+
+func (m Map) Dimensions() (int, int) {
+	return m.Width, m.Height
 }
 
 func (m Map) String() string {

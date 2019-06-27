@@ -2,16 +2,12 @@
 package game
 
 import (
-	"fmt"
-
 	"github.com/cpu/yasp/dungeon"
-	"github.com/cpu/yasp/view"
 )
 
 type Player struct {
-	x     int
-	y     int
-	Style view.Style
+	x int
+	y int
 }
 
 func (p Player) String() string {
@@ -42,38 +38,35 @@ func (p *Player) MoveTo(x, y int) (int, int) {
 }
 
 type State struct {
-	Debug   bool
-	P       Player
-	Map     dungeon.Map
-	Display *view.Display
+	Debug bool
+	P     Player
+	Map   dungeon.Map
 }
 
 func NewGame() State {
 	return State{
 		P: Player{
-			Style: view.DefaultStyle,
-			x:     10,
-			y:     10,
+			x: 10,
+			y: 10,
 		},
 		Map: dungeon.One,
 	}
 }
 
-func (state *State) SetDisplay(d *view.Display) {
-	state.Display = d
-}
-
 func (state *State) PrintDebug() {
-	if state.Debug {
-		pX, pY := state.P.Pos()
-		dbg := fmt.Sprintf("p x: %d y: %d", pX, pY)
-		_, maxY := state.Display.Size()
-		state.Display.PrintFixed(0, maxY-1, view.DefaultStyle, dbg)
-	}
+	/*
+		if state.Debug {
+			pX, pY := state.P.Pos()
+			dbg := fmt.Sprintf("p x: %d y: %d", pX, pY)
+			_, maxY := 100, 100
+			state.Display.PrintFixed(0, maxY-1, view.DefaultStyle, dbg)
+		}
+	*/
 }
 
+/*
 func (state *State) HandleInput(ev view.InputEvent) {
-	maxX, maxY := state.Display.Size()
+	maxX, maxY := 100, 100
 	pX, pY := state.P.Pos()
 
 	switch {
@@ -112,3 +105,4 @@ func (state *State) Tick() {
 	pX, pY := state.P.Pos()
 	state.Display.PrintFixed(pX, pY, state.P.Style, "@")
 }
+*/

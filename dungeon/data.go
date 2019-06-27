@@ -1,13 +1,11 @@
 package dungeon
 
-import "github.com/cpu/yasp/view"
-
 var (
 	TileMap = map[TileCode]Tile{
-		0: {repr: ".", Style: view.Green},
-		1: {repr: "#", Style: view.Chocolate},
-		2: {repr: "~", Style: view.PaleGreen},
-		3: {repr: "=", Style: view.Brown},
+		0: {repr: "."},
+		1: {repr: "#"},
+		2: {repr: "~"},
+		3: {repr: "="},
 	}
 	One = Map{
 		Width:  32,

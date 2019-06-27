@@ -2,9 +2,12 @@
 package view
 
 import (
-	"time"
+	"fmt"
+	"os"
 
+	"github.com/cpu/yasp/dungeon"
 	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/views"
 	runewidth "github.com/mattn/go-runewidth"
 )
 
@@ -63,11 +66,90 @@ type InputEvent struct {
 	ev tcell.Key
 }
 
+type mainWindow struct {
+	main    *views.CellView
+	keybar  *views.SimpleStyledText
+	status  *views.SimpleStyledTextBar
+	display *Display
+	model   *dungeonModel
+
+	views.Panel
+}
+
+type dungeonModel struct {
+	x    int
+	y    int
+	mapp dungeon.Map
+	hide bool
+	enab bool
+	loc  string
+}
+
+func (m *dungeonModel) GetBounds() (int, int) {
+	return m.mapp.Dimensions()
+}
+
+func (m *dungeonModel) MoveCursor(offx, offy int) {
+	m.x += offx
+	m.y += offy
+	m.limitCursor()
+}
+
+func (m *dungeonModel) limitCursor() {
+	if m.x < 0 {
+		m.x = 0
+	}
+	if m.x > m.mapp.Width-1 {
+		m.x = m.mapp.Width - 1
+	}
+	if m.y < 0 {
+		m.y = 0
+	}
+	if m.y > m.mapp.Height-1 {
+		m.y = m.mapp.Height - 1
+	}
+	m.loc = fmt.Sprintf("Player %d,%d", m.x, m.y)
+}
+
+func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
+	return m.x, m.y, m.enab, !m.hide
+}
+
+func (m *dungeonModel) SetCursor(x int, y int) {
+	m.x = x
+	m.y = y
+	m.limitCursor()
+}
+
+func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
+	var ch rune
+	if x >= m.mapp.Width || y >= m.mapp.Height {
+		return ch, DefaultStyle.style, nil, 1
+	}
+	index := x + (y * m.mapp.Width)
+	tile := dungeon.LookupTile(m.mapp.Tiles[index])
+	var style tcell.Style
+	switch label := tile.String(); label {
+	case ".":
+		style = Green.style
+	case "#":
+		style = Chocolate.style
+	case "~":
+		style = PaleGreen.style
+	case "=":
+		style = Brown.style
+	default:
+		style = DefaultStyle.style
+	}
+	return rune(tile.String()[0]), style, nil, 1
+}
+
 type Display struct {
 	inputHandler InputHandler
 	tickHandler  TickHandler
-	quit         chan struct{}
-	s            tcell.Screen
+
+	mainWin *mainWindow
+	app     *views.Application
 }
 
 // PrintFixed prints a msg to the provided tcell.Screen in the given style. The
@@ -82,87 +164,165 @@ func (d Display) PrintFixed(x, y int, style Style, msg string) {
 			c = ' '
 			w = 1
 		}
-		d.s.SetContent(x, y, c, comb, style.style)
+		//d.s.SetContent(x, y, c, comb, style.style)
+		fmt.Printf("(%d,%d): %#v %#v %#v\n", x, y, c, comb, style.style)
 		x += w
 	}
 }
 
-func (d *Display) pollForever() {
-	go func() {
-		for {
-			ev := d.s.PollEvent()
-			switch ev := ev.(type) {
-			case *tcell.EventKey:
-				switch ev.Key() {
-				case tcell.KeyEscape, tcell.KeyEnter:
-					close(d.quit)
-					return
-				case tcell.KeyCtrlL:
-					d.s.Sync()
-					/*
-					* Game controls
-					 */
-				case tcell.KeyCtrlD:
-					d.inputHandler(InputDebug)
-				case tcell.KeyRight:
-					d.inputHandler(InputKeyRight)
-				case tcell.KeyLeft:
-					d.inputHandler(InputKeyLeft)
-				case tcell.KeyUp:
-					d.inputHandler(InputKeyUp)
-				case tcell.KeyDown:
-					d.inputHandler(InputKeyDown)
-				}
-			case *tcell.EventResize:
-				d.s.Sync()
+func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
+	app := win.display.app
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
+		switch ev.Key() {
+		case tcell.KeyEscape, tcell.KeyEnter:
+			app.Quit()
+			return true
+		case tcell.KeyCtrlL:
+			app.Refresh()
+			return true
+
+		case tcell.KeyRune:
+			switch ev.Rune() {
+			case 'Q', 'q':
+				app.Quit()
+				return true
+			case 'S', 's':
+				win.model.hide = false
+				win.updateKeys()
+				return true
+			case 'H', 'h':
+				win.model.hide = true
+				win.updateKeys()
+				return true
+			case 'E', 'e':
+				win.model.enab = true
+				win.updateKeys()
+				return true
+			case 'D', 'd':
+				win.model.enab = false
+				win.updateKeys()
+				return true
 			}
 		}
-	}()
+	}
+
+	return win.Panel.HandleEvent(ev)
+}
+
+func (win *mainWindow) Draw() {
+	win.status.SetLeft(win.model.loc)
+	win.Panel.Draw()
+}
+
+func (win *mainWindow) updateKeys() {
+	m := win.model
+	w := "[%AQ%N] Quit"
+	if !m.enab {
+		w += "  [%AE%N] Enable cursor"
+	} else {
+		w += "  [%AD%N] Disable cursor"
+		if !m.hide {
+			w += "  [%AH%N] Hide cursor"
+		} else {
+			w += "  [%AS%N] Show cursor"
+		}
+	}
+	app := win.display.app
+	win.keybar.SetMarkup(w)
+	app.Update()
 }
 
 func (d *Display) RunForever() {
-	d.pollForever()
-
-loop:
-	for {
-		select {
-		case <-d.quit:
-			break loop
-		case <-time.After(time.Millisecond * 50):
-		}
-
-		d.s.Clear()
-		d.tickHandler()
-		d.s.Show()
+	if e := d.app.Run(); e != nil {
+		fmt.Fprintln(os.Stderr, e.Error())
+		os.Exit(1)
 	}
 
-	d.s.Fini()
-}
-
-func (d Display) Size() (int, int) {
-	return d.s.Size()
+	/*
+			d.s.Clear()
+			d.tickHandler()
+			d.s.Show()
+		d.s.Fini()
+	*/
 }
 
 func New(h InputHandler, t TickHandler) (*Display, error) {
-	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
-	s, err := tcell.NewScreen()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := s.Init(); err != nil {
-		return nil, err
-	}
-
-	s.SetStyle(tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack))
-	s.Clear()
-
-	return &Display{
-		quit:         make(chan struct{}),
+	d := &Display{
 		inputHandler: h,
 		tickHandler:  t,
-		s:            s,
-	}, nil
+	}
+
+	app := &views.Application{}
+	window := &mainWindow{
+		display: d,
+		model: &dungeonModel{
+			mapp: dungeon.One,
+		},
+	}
+
+	title := views.NewTextBar()
+	title.SetStyle(DefaultStyle.style)
+	title.SetCenter("Y A S P", tcell.StyleDefault)
+	title.SetRight("HP: 0", tcell.StyleDefault)
+
+	window.keybar = views.NewSimpleStyledText()
+	window.keybar.RegisterStyle('N', tcell.StyleDefault.
+		Background(tcell.ColorSilver).
+		Foreground(tcell.ColorBlack))
+	window.keybar.RegisterStyle('A', tcell.StyleDefault.
+		Background(tcell.ColorSilver).
+		Foreground(tcell.ColorRed))
+
+	window.status = views.NewSimpleStyledTextBar()
+	window.status.SetStyle(tcell.StyleDefault.
+		Background(tcell.ColorBlue).
+		Foreground(tcell.ColorYellow))
+	window.status.RegisterLeftStyle('N', tcell.StyleDefault.
+		Background(tcell.ColorYellow).
+		Foreground(tcell.ColorBlack))
+
+	window.status.SetLeft("My status is here.")
+	window.status.SetRight("%Uyasp%N demo!")
+	window.status.SetCenter("Cen%ST%Ner")
+
+	window.main = views.NewCellView()
+	window.main.SetModel(window.model)
+	window.main.SetStyle(tcell.StyleDefault.
+		Background(tcell.ColorBlack))
+
+	window.SetMenu(window.keybar)
+	window.SetTitle(title)
+	window.SetContent(window.main)
+	window.SetStatus(window.status)
+
+	app.SetStyle(tcell.StyleDefault.
+		Foreground(tcell.ColorWhite).
+		Background(tcell.ColorBlack))
+
+	d.app = app
+	d.mainWin = window
+
+	window.updateKeys()
+
+	app.SetRootWidget(window)
+	return d, nil
+
+	/*
+		tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
+		s, err := tcell.NewScreen()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.Init(); err != nil {
+			return nil, err
+		}
+
+		s.SetStyle(tcell.StyleDefault.
+			Foreground(tcell.ColorWhite).
+			Background(tcell.ColorBlack))
+		s.Clear()
+	*/
+
 }

@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/cpu/yasp"
-	"github.com/cpu/yasp/game"
 	"github.com/cpu/yasp/view"
 )
 
@@ -35,12 +34,12 @@ func main() {
 	_, err := yasp.LoadConfigFile(*configFile)
 	ifErrExit(err, "failed to load config from %q: %v\n", *configFile, err)
 
-	g := game.NewGame()
+	//g := game.NewGame()
 
-	display, err := view.New(g.HandleInput, g.Tick)
+	display, err := view.New(nil, nil)
 	ifErrExit(err, "failed to create display: %v\n", err)
 
-	g.SetDisplay(display)
+	//g.SetDisplay(display)
 
 	display.RunForever()
 
