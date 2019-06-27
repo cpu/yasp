@@ -118,7 +118,6 @@ type dungeonModel struct {
 	y    int
 	mapp dungeon.Map
 	hide bool
-	enab bool
 	loc  string
 }
 
@@ -149,7 +148,7 @@ func (m *dungeonModel) limitCursor() {
 }
 
 func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
-	return m.x, m.y, m.enab, !m.hide
+	return m.x, m.y, true, !m.hide
 }
 
 func (m *dungeonModel) SetCursor(x int, y int) {
@@ -232,14 +231,6 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 				win.dungeonModel.hide = true
 				win.updateKeys()
 				return true
-			case 'E', 'e':
-				win.dungeonModel.enab = true
-				win.updateKeys()
-				return true
-			case 'D', 'd':
-				win.dungeonModel.enab = false
-				win.updateKeys()
-				return true
 			}
 		}
 	}
@@ -255,15 +246,10 @@ func (win *mainWindow) Draw() {
 func (win *mainWindow) updateKeys() {
 	m := win.dungeonModel
 	w := "[%AQ%N] Quit"
-	if !m.enab {
-		w += "  [%AE%N] Enable cursor"
+	if !m.hide {
+		w += "  [%AH%N] Hide cursor"
 	} else {
-		w += "  [%AD%N] Disable cursor"
-		if !m.hide {
-			w += "  [%AH%N] Hide cursor"
-		} else {
-			w += "  [%AS%N] Show cursor"
-		}
+		w += "  [%AS%N] Show cursor"
 	}
 	app := win.display.app
 	win.keybar.SetMarkup(w)
