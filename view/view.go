@@ -8,7 +8,6 @@ import (
 	"github.com/cpu/yasp/dungeon"
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/views"
-	runewidth "github.com/mattn/go-runewidth"
 )
 
 var (
@@ -67,15 +66,24 @@ type InputEvent struct {
 }
 
 type mainWindow struct {
-	content       *views.BoxLayout
+	display *Display
+
+	content *views.BoxLayout
+	keybar  *views.SimpleStyledText
+	status  *views.SimpleStyledTextBar
+
+	topContent    *views.BoxLayout
 	dungeonView   *views.CellView
 	dungeonModel  *dungeonModel
+	inventoryView *inventoryView
+
 	questlogView  *views.CellView
 	questlogModel *questlogModel
-	keybar        *views.SimpleStyledText
-	status        *views.SimpleStyledTextBar
-	display       *Display
 
+	views.Panel
+}
+
+type inventoryView struct {
 	views.Panel
 }
 
@@ -193,24 +201,6 @@ type Display struct {
 	app     *views.Application
 }
 
-// PrintFixed prints a msg to the provided tcell.Screen in the given style. The
-// position is fixed at x,y and takes into account the rune width of the msg
-// content.
-func (d Display) PrintFixed(x, y int, style Style, msg string) {
-	for _, c := range msg {
-		var comb []rune
-		w := runewidth.RuneWidth(c)
-		if w == 0 {
-			comb = []rune{c}
-			c = ' '
-			w = 1
-		}
-		//d.s.SetContent(x, y, c, comb, style.style)
-		fmt.Printf("(%d,%d): %#v %#v %#v\n", x, y, c, comb, style.style)
-		x += w
-	}
-}
-
 func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 	app := win.display.app
 	switch ev := ev.(type) {
@@ -279,7 +269,8 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 
 	app := &views.Application{}
 	window := &mainWindow{
-		display: d,
+		display:       d,
+		inventoryView: &inventoryView{},
 		dungeonModel: &dungeonModel{
 			mapp: dungeon.One,
 		},
@@ -372,8 +363,21 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 	window.questlogView.SetModel(window.questlogModel)
 	window.questlogView.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlack))
 
+	invTitleText := views.NewSimpleStyledTextBar()
+	invTitleText.SetCenter("Inventory")
+	invText := views.NewSimpleStyledText()
+	invText.SetMarkup("An egg\nA sword\nLow-quality meats\n")
+
+	window.inventoryView.SetTitle(invTitleText)
+	window.inventoryView.SetContent(invText)
+
 	window.content = views.NewBoxLayout(views.Vertical)
-	window.content.AddWidget(window.dungeonView, 1.0)
+
+	window.topContent = views.NewBoxLayout(views.Horizontal)
+	window.topContent.AddWidget(window.dungeonView, 1.0)
+	window.topContent.AddWidget(window.inventoryView, 0.0)
+
+	window.content.AddWidget(window.topContent, 1.0)
 	window.content.AddWidget(window.questlogView, 1.0)
 
 	window.SetMenu(window.keybar)
