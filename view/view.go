@@ -67,11 +67,11 @@ type InputEvent struct {
 }
 
 type mainWindow struct {
-	main    *views.CellView
-	keybar  *views.SimpleStyledText
-	status  *views.SimpleStyledTextBar
-	display *Display
-	model   *dungeonModel
+	dungeonView *views.CellView
+	keybar      *views.SimpleStyledText
+	status      *views.SimpleStyledTextBar
+	display     *Display
+	model       *dungeonModel
 
 	views.Panel
 }
@@ -286,14 +286,14 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 	window.status.SetRight("%Uyasp%N demo!")
 	window.status.SetCenter("Cen%ST%Ner")
 
-	window.main = views.NewCellView()
-	window.main.SetModel(window.model)
-	window.main.SetStyle(tcell.StyleDefault.
+	window.dungeonView = views.NewCellView()
+	window.dungeonView.SetModel(window.model)
+	window.dungeonView.SetStyle(tcell.StyleDefault.
 		Background(tcell.ColorBlack))
 
 	window.SetMenu(window.keybar)
 	window.SetTitle(title)
-	window.SetContent(window.main)
+	window.SetContent(window.dungeonView)
 	window.SetStatus(window.status)
 
 	app.SetStyle(tcell.StyleDefault.
