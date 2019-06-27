@@ -15,6 +15,12 @@ func (t Tile) String() string {
 	return t.repr
 }
 
+var (
+	Player = Tile{
+		repr: "@",
+	}
+)
+
 type Map struct {
 	Width  int
 	Height int

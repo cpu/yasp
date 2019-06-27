@@ -114,11 +114,11 @@ func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 }
 
 type dungeonModel struct {
-	x    int
-	y    int
-	mapp dungeon.Map
-	hide bool
-	loc  string
+	x               int
+	y               int
+	mapp            dungeon.Map
+	highlightPlayer bool
+	loc             string
 }
 
 func (m *dungeonModel) GetBounds() (int, int) {
@@ -148,7 +148,7 @@ func (m *dungeonModel) limitCursor() {
 }
 
 func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
-	return m.x, m.y, true, !m.hide
+	return m.x, m.y, true, m.highlightPlayer
 }
 
 func (m *dungeonModel) SetCursor(x int, y int) {
@@ -162,8 +162,13 @@ func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	if x >= m.mapp.Width || y >= m.mapp.Height {
 		return ch, DefaultStyle.style, nil, 1
 	}
-	index := x + (y * m.mapp.Width)
-	tile := dungeon.LookupTile(m.mapp.Tiles[index])
+	var tile dungeon.Tile
+	if x == m.x && y == m.y {
+		tile = dungeon.Player
+	} else {
+		index := x + (y * m.mapp.Width)
+		tile = dungeon.LookupTile(m.mapp.Tiles[index])
+	}
 	var style tcell.Style
 	switch label := tile.String(); label {
 	case ".":
@@ -223,12 +228,8 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 			case 'Q', 'q':
 				app.Quit()
 				return true
-			case 'S', 's':
-				win.dungeonModel.hide = false
-				win.updateKeys()
-				return true
 			case 'H', 'h':
-				win.dungeonModel.hide = true
+				win.dungeonModel.highlightPlayer = !win.dungeonModel.highlightPlayer
 				win.updateKeys()
 				return true
 			}
@@ -246,10 +247,10 @@ func (win *mainWindow) Draw() {
 func (win *mainWindow) updateKeys() {
 	m := win.dungeonModel
 	w := "[%AQ%N] Quit"
-	if !m.hide {
-		w += "  [%AH%N] Hide cursor"
+	if !m.highlightPlayer {
+		w += "  [%AH%N] Highlight player"
 	} else {
-		w += "  [%AS%N] Show cursor"
+		w += "  [%AH%N] Un-highlight player"
 	}
 	app := win.display.app
 	win.keybar.SetMarkup(w)
