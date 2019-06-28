@@ -123,46 +123,45 @@ func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 }
 
 type dungeonModel struct {
-	mapp            dungeon.Map
-	player          game.Player
+	game            game.State
 	highlightPlayer bool
 	loc             string
 }
 
 func (m *dungeonModel) GetBounds() (int, int) {
-	return m.mapp.Dimensions()
+	return m.game.Map.Dimensions()
 }
 
 func (m *dungeonModel) MoveCursor(offX, offY int) {
-	curX, curY := m.player.Pos()
-	m.player.MoveTo(curX+offX, curY+offY)
-	m.player.Clamp(m.mapp.Width, m.mapp.Height)
-	m.loc = m.player.String()
+	curX, curY := m.game.P.Pos()
+	m.game.P.MoveTo(curX+offX, curY+offY)
+	m.game.P.Clamp(m.game.Map.Width, m.game.Map.Height)
+	m.loc = m.game.P.String()
 }
 
 func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
-	playerX, playerY := m.player.Pos()
+	playerX, playerY := m.game.P.Pos()
 	return playerX, playerY, true, m.highlightPlayer
 }
 
 func (m *dungeonModel) SetCursor(x int, y int) {
-	m.player.MoveTo(x, y)
-	m.player.Clamp(m.mapp.Width, m.mapp.Height)
-	m.loc = m.player.String()
+	m.game.P.MoveTo(x, y)
+	m.game.P.Clamp(m.game.Map.Width, m.game.Map.Height)
+	m.loc = m.game.P.String()
 }
 
 func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	var ch rune
-	if x >= m.mapp.Width || y >= m.mapp.Height {
+	if x >= m.game.Map.Width || y >= m.game.Map.Height {
 		return ch, DefaultStyle.style, nil, 1
 	}
-	playerX, playerY := m.player.Pos()
+	playerX, playerY := m.game.P.Pos()
 	var tile dungeon.Tile
 	if x == playerX && y == playerY {
 		tile = dungeon.PlayerTile
 	} else {
-		index := x + (y * m.mapp.Width)
-		tile = dungeon.LookupTile(m.mapp.Tiles[index])
+		index := x + (y * m.game.Map.Width)
+		tile = dungeon.LookupTile(m.game.Map.Tiles[index])
 	}
 	var style tcell.Style
 	switch label := tile.String(); label {
@@ -252,7 +251,7 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 		display:       d,
 		inventoryView: &inventoryView{},
 		dungeonModel: &dungeonModel{
-			mapp: dungeon.One,
+			game: game.NewGame(),
 		},
 		questlogModel: &questlogModel{
 			width: dungeon.One.Width,
@@ -376,22 +375,4 @@ func New(h InputHandler, t TickHandler) (*Display, error) {
 
 	app.SetRootWidget(window)
 	return d, nil
-
-	/*
-		tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
-		s, err := tcell.NewScreen()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := s.Init(); err != nil {
-			return nil, err
-		}
-
-		s.SetStyle(tcell.StyleDefault.
-			Foreground(tcell.ColorWhite).
-			Background(tcell.ColorBlack))
-		s.Clear()
-	*/
-
 }
