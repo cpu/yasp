@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/cpu/yasp/dungeon"
+	"github.com/cpu/yasp/game"
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/views"
 )
@@ -122,9 +123,8 @@ func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 }
 
 type dungeonModel struct {
-	x               int
-	y               int
 	mapp            dungeon.Map
+	player          game.Player
 	highlightPlayer bool
 	loc             string
 }
@@ -133,36 +133,22 @@ func (m *dungeonModel) GetBounds() (int, int) {
 	return m.mapp.Dimensions()
 }
 
-func (m *dungeonModel) MoveCursor(offx, offy int) {
-	m.x += offx
-	m.y += offy
-	m.limitCursor()
-}
-
-func (m *dungeonModel) limitCursor() {
-	if m.x < 0 {
-		m.x = 0
-	}
-	if m.x > m.mapp.Width-1 {
-		m.x = m.mapp.Width - 1
-	}
-	if m.y < 0 {
-		m.y = 0
-	}
-	if m.y > m.mapp.Height-1 {
-		m.y = m.mapp.Height - 1
-	}
-	m.loc = fmt.Sprintf("Player %d,%d", m.x, m.y)
+func (m *dungeonModel) MoveCursor(offX, offY int) {
+	curX, curY := m.player.Pos()
+	m.player.MoveTo(curX+offX, curY+offY)
+	m.player.Clamp(m.mapp.Width, m.mapp.Height)
+	m.loc = m.player.String()
 }
 
 func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
-	return m.x, m.y, true, m.highlightPlayer
+	playerX, playerY := m.player.Pos()
+	return playerX, playerY, true, m.highlightPlayer
 }
 
 func (m *dungeonModel) SetCursor(x int, y int) {
-	m.x = x
-	m.y = y
-	m.limitCursor()
+	m.player.MoveTo(x, y)
+	m.player.Clamp(m.mapp.Width, m.mapp.Height)
+	m.loc = m.player.String()
 }
 
 func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
@@ -170,9 +156,10 @@ func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	if x >= m.mapp.Width || y >= m.mapp.Height {
 		return ch, DefaultStyle.style, nil, 1
 	}
+	playerX, playerY := m.player.Pos()
 	var tile dungeon.Tile
-	if x == m.x && y == m.y {
-		tile = dungeon.Player
+	if x == playerX && y == playerY {
+		tile = dungeon.PlayerTile
 	} else {
 		index := x + (y * m.mapp.Width)
 		tile = dungeon.LookupTile(m.mapp.Tiles[index])
@@ -252,13 +239,6 @@ func (d *Display) RunForever() {
 		fmt.Fprintln(os.Stderr, e.Error())
 		os.Exit(1)
 	}
-
-	/*
-			d.s.Clear()
-			d.tickHandler()
-			d.s.Show()
-		d.s.Fini()
-	*/
 }
 
 func New(h InputHandler, t TickHandler) (*Display, error) {

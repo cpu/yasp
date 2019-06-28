@@ -2,16 +2,14 @@
 package game
 
 import (
+	"fmt"
+
 	"github.com/cpu/yasp/dungeon"
 )
 
 type Player struct {
 	x int
 	y int
-}
-
-func (p Player) String() string {
-	return "@"
 }
 
 func (p Player) Pos() (int, int) {
@@ -35,6 +33,28 @@ func (p *Player) MoveTo(x, y int) (int, int) {
 	p.x = x
 	p.y = y
 	return oldX, oldY
+}
+
+// Clamp restricts the Player's position to [0, maxX) and [0, maxY). It returns
+// the player's updated position after clamping.
+func (p *Player) Clamp(maxX, maxY int) (int, int) {
+	if p.x < 0 {
+		p.x = 0
+	}
+	if p.y < 0 {
+		p.y = 0
+	}
+	if p.x > maxX-1 {
+		p.x = maxX - 1
+	}
+	if p.y > maxY-1 {
+		p.y = maxY - 1
+	}
+	return p.x, p.y
+}
+
+func (p *Player) String() string {
+	return fmt.Sprintf("Player: x=%4d y=%4d", p.x, p.y)
 }
 
 type State struct {

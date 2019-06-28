@@ -16,7 +16,7 @@ func (t Tile) String() string {
 }
 
 var (
-	Player = Tile{
+	PlayerTile = Tile{
 		repr: "@",
 	}
 )
