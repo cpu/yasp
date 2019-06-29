@@ -93,6 +93,8 @@ func (s *State) RunForever() {
 			case events.Movement:
 				s.P.Move(v.OffX, v.OffY)
 				s.P.Clamp(s.Map.Width, s.Map.Height)
+			case events.KeyPress:
+				fmt.Printf("\nPressed %s\n", string(v.Key))
 			}
 		}
 	}()

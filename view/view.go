@@ -57,15 +57,15 @@ func (m *questlogModel) SetCursor(_, _ int) {
 func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	var ch rune
 	if y >= len(m.items) {
-		return ch, DefaultStyle.style, nil, 1
+		return ch, DefaultStyle, nil, 1
 	}
 	item := m.items[y]
 
 	if x >= len(item) {
-		return ch, DefaultStyle.style, nil, 1
+		return ch, DefaultStyle, nil, 1
 	}
 
-	return rune(item[x]), Green.style, nil, 1
+	return rune(item[x]), Green, nil, 1
 }
 
 type dungeonModel struct {
@@ -99,7 +99,7 @@ func (m *dungeonModel) SetCursor(x int, y int) {
 func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	var ch rune
 	if x >= m.game.Map.Width || y >= m.game.Map.Height {
-		return ch, DefaultStyle.style, nil, 1
+		return ch, DefaultStyle, nil, 1
 	}
 	playerX, playerY := m.game.P.Pos()
 	var tile dungeon.Tile
@@ -112,15 +112,15 @@ func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 	var style tcell.Style
 	switch label := tile.String(); label {
 	case ".":
-		style = Green.style
+		style = Green
 	case "#":
-		style = Chocolate.style
+		style = Chocolate
 	case "~":
-		style = PaleGreen.style
+		style = PaleGreen
 	case "=":
-		style = Brown.style
+		style = Brown
 	default:
-		style = DefaultStyle.style
+		style = DefaultStyle
 	}
 	return rune(tile.String()[0]), style, nil, 1
 }
@@ -141,9 +141,8 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyCtrlL:
 			app.Refresh()
 			return true
-
 		case tcell.KeyRune:
-			switch ev.Rune() {
+			switch r := ev.Rune(); r {
 			case 'Q', 'q':
 				app.Quit()
 				return true
@@ -151,6 +150,10 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 				win.dungeonModel.highlightPlayer = !win.dungeonModel.highlightPlayer
 				win.updateKeys()
 				return true
+			default:
+				win.dungeonModel.game.EventChannel <- events.KeyPress{
+					Key: r,
+				}
 			}
 		}
 	}
@@ -249,7 +252,7 @@ func New(g *game.State) (*Display, error) {
 	}
 
 	title := views.NewTextBar()
-	title.SetStyle(DefaultStyle.style)
+	title.SetStyle(DefaultStyle)
 	title.SetCenter("Y A S P", tcell.StyleDefault)
 	title.SetRight("HP: 0", tcell.StyleDefault)
 
