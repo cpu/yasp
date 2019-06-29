@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cpu/yasp/dungeon"
+	"github.com/cpu/yasp/game/events"
 )
 
 type Player struct {
@@ -26,12 +27,20 @@ func (p Player) Y() int {
 
 // MoveTo changes the Player's position to the given coordinates. The *previous*
 // Player position is returned. Note that there is no error checking done on the
-// x, y coordinates with respect to some other game state (e.g. the map). It's
-// assumed the provided values have been vetted.
+// x, y coordinates with respect to some other game state (e.g. the map). Use
+// clamp with the bounding dimensions to ensure the player position is
+// consistent with the game world.
 func (p *Player) MoveTo(x, y int) (int, int) {
 	oldX, oldY := p.Pos()
 	p.x = x
 	p.y = y
+	return oldX, oldY
+}
+
+func (p *Player) Move(offX, offY int) (int, int) {
+	oldX, oldY := p.Pos()
+	p.x = oldX + offX
+	p.y = oldY + offY
 	return oldX, oldY
 }
 
@@ -61,68 +70,30 @@ type State struct {
 	Debug bool
 	P     Player
 	Map   dungeon.Map
+
+	EventChannel chan events.Event
 }
 
-func NewGame() State {
-	return State{
+func NewGame() *State {
+	return &State{
 		P: Player{
-			x: 10,
-			y: 10,
+			x: 1,
+			y: 1,
 		},
 		Map: dungeon.One,
+
+		EventChannel: make(chan events.Event, 8),
 	}
 }
 
-func (state *State) PrintDebug() {
-	/*
-		if state.Debug {
-			pX, pY := state.P.Pos()
-			dbg := fmt.Sprintf("p x: %d y: %d", pX, pY)
-			_, maxY := 100, 100
-			state.Display.PrintFixed(0, maxY-1, view.DefaultStyle, dbg)
+func (s *State) RunForever() {
+	go func() {
+		for e := range s.EventChannel {
+			switch v := e.(type) {
+			case events.Movement:
+				s.P.Move(v.OffX, v.OffY)
+				s.P.Clamp(s.Map.Width, s.Map.Height)
+			}
 		}
-	*/
+	}()
 }
-
-/*
-func (state *State) HandleInput(ev view.InputEvent) {
-	maxX, maxY := 100, 100
-	pX, pY := state.P.Pos()
-
-	switch {
-	case ev == view.InputDebug:
-		state.Debug = !state.Debug
-	case ev == view.InputKeyRight:
-		if pX+1 < maxX {
-			state.P.MoveTo(pX+1, pY)
-		}
-	case ev == view.InputKeyLeft:
-		if pX-1 >= 0 {
-			state.P.MoveTo(pX-1, pY)
-		}
-	case ev == view.InputKeyUp:
-		if pY-1 >= 0 {
-			state.P.MoveTo(pX, pY-1)
-		}
-	case ev == view.InputKeyDown:
-		if pY+1 < maxY {
-			state.P.MoveTo(pX, pY+1)
-		}
-	}
-}
-
-func (state *State) Tick() {
-	for y := 0; y < state.Map.Height; y++ {
-		for x := 0; x < state.Map.Width; x++ {
-			index := x + (y * state.Map.Width)
-			tile := dungeon.LookupTile(state.Map.Tiles[index])
-			state.Display.PrintFixed(x, y, tile.Style, tile.String())
-		}
-	}
-
-	state.PrintDebug()
-
-	pX, pY := state.P.Pos()
-	state.Display.PrintFixed(pX, pY, state.P.Style, "@")
-}
-*/

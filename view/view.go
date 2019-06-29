@@ -7,64 +7,10 @@ import (
 
 	"github.com/cpu/yasp/dungeon"
 	"github.com/cpu/yasp/game"
+	"github.com/cpu/yasp/game/events"
 	"github.com/gdamore/tcell"
 	"github.com/gdamore/tcell/views"
 )
-
-var (
-	DefaultStyle = Style{
-		style: tcell.StyleDefault.
-			Foreground(tcell.ColorWhite).
-			Background(tcell.ColorBlack),
-	}
-	PaleGreen = Style{
-		style: tcell.StyleDefault.
-			Foreground(tcell.ColorPaleGreen).
-			Background(tcell.ColorBlack),
-	}
-	Green = Style{
-		style: tcell.StyleDefault.
-			Foreground(tcell.ColorGreen).
-			Background(tcell.ColorBlack),
-	}
-	Chocolate = Style{
-		style: tcell.StyleDefault.
-			Foreground(tcell.ColorChocolate).
-			Background(tcell.ColorBlack),
-	}
-	Brown = Style{
-		style: tcell.StyleDefault.
-			Foreground(tcell.ColorBrown).
-			Background(tcell.ColorBlack),
-	}
-	InputKeyRight = InputEvent{
-		ev: tcell.KeyRight,
-	}
-	InputKeyLeft = InputEvent{
-		ev: tcell.KeyLeft,
-	}
-	InputKeyUp = InputEvent{
-		ev: tcell.KeyUp,
-	}
-	InputKeyDown = InputEvent{
-		ev: tcell.KeyDown,
-	}
-	InputDebug = InputEvent{
-		ev: tcell.KeyCtrlD,
-	}
-)
-
-type InputHandler func(ev InputEvent)
-
-type TickHandler func()
-
-type Style struct {
-	style tcell.Style
-}
-
-type InputEvent struct {
-	ev tcell.Key
-}
 
 type mainWindow struct {
 	display *Display
@@ -123,9 +69,8 @@ func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 }
 
 type dungeonModel struct {
-	game            game.State
+	game            *game.State
 	highlightPlayer bool
-	loc             string
 }
 
 func (m *dungeonModel) GetBounds() (int, int) {
@@ -133,10 +78,10 @@ func (m *dungeonModel) GetBounds() (int, int) {
 }
 
 func (m *dungeonModel) MoveCursor(offX, offY int) {
-	curX, curY := m.game.P.Pos()
-	m.game.P.MoveTo(curX+offX, curY+offY)
-	m.game.P.Clamp(m.game.Map.Width, m.game.Map.Height)
-	m.loc = m.game.P.String()
+	m.game.EventChannel <- events.Movement{
+		OffX: offX,
+		OffY: offY,
+	}
 }
 
 func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
@@ -145,9 +90,10 @@ func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
 }
 
 func (m *dungeonModel) SetCursor(x int, y int) {
-	m.game.P.MoveTo(x, y)
-	m.game.P.Clamp(m.game.Map.Width, m.game.Map.Height)
-	m.loc = m.game.P.String()
+	curX, curY := m.game.P.Pos()
+	diffX := curX - x
+	diffY := curY - y
+	m.MoveCursor(diffX, diffY)
 }
 
 func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
@@ -180,9 +126,6 @@ func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 }
 
 type Display struct {
-	inputHandler InputHandler
-	tickHandler  TickHandler
-
 	mainWin *mainWindow
 	app     *views.Application
 }
@@ -216,7 +159,7 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 }
 
 func (win *mainWindow) Draw() {
-	win.status.SetLeft(win.dungeonModel.loc)
+	win.status.SetLeft(win.dungeonModel.game.P.String())
 	win.Panel.Draw()
 }
 
@@ -240,21 +183,18 @@ func (d *Display) RunForever() {
 	}
 }
 
-func New(h InputHandler, t TickHandler) (*Display, error) {
-	d := &Display{
-		inputHandler: h,
-		tickHandler:  t,
-	}
+func New(g *game.State) (*Display, error) {
+	d := &Display{}
 
 	app := &views.Application{}
 	window := &mainWindow{
 		display:       d,
 		inventoryView: &inventoryView{},
 		dungeonModel: &dungeonModel{
-			game: game.NewGame(),
+			game: g,
 		},
 		questlogModel: &questlogModel{
-			width: dungeon.One.Width,
+			width: g.Map.Width,
 			items: []string{
 				"You were eaten by a grue.",
 				"A pox on your soul was lifted.",
