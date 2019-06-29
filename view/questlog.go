@@ -28,20 +28,23 @@ func (m *questlogModel) SetCursor(_, _ int) {
 }
 
 func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
+	style := tcell.StyleDefault.Background(tcell.ColorGray)
+	green := style.Foreground(tcell.ColorGreen)
+
 	y = m.log.Len() - y
 	var ch rune
 	if y >= m.log.Len() {
-		return ch, DefaultStyle, nil, 1
+		return ch, style, nil, 1
 	}
 	item, err := m.log.GetItem(y)
 	if err != nil {
-		return ch, DefaultStyle, nil, 1
+		return ch, style, nil, 1
 	}
 
 	itemStr := item.String()
 	if x >= len(itemStr) {
-		return ch, DefaultStyle, nil, 1
+		return ch, style, nil, 1
 	}
 
-	return rune(itemStr[x]), Green, nil, 1
+	return rune(itemStr[x]), green, nil, 1
 }

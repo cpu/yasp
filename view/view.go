@@ -140,7 +140,7 @@ func New(g *game.State) (*Display, error) {
 
 	window.questlogView = views.NewCellView()
 	window.questlogView.SetModel(window.questlogModel)
-	window.questlogView.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlack))
+	window.questlogView.SetStyle(tcell.StyleDefault.Background(tcell.ColorGray))
 
 	invTitleText := views.NewSimpleStyledTextBar()
 	invTitleText.SetCenter("Inventory")
