@@ -29,80 +29,6 @@ type mainWindow struct {
 	views.Panel
 }
 
-type inventoryView struct {
-	views.Panel
-}
-
-type questlogModel struct {
-	width  int
-	height int
-	items  []string
-}
-
-func (m *questlogModel) GetBounds() (int, int) {
-	return m.width, m.height
-}
-
-func (m *questlogModel) MoveCursor(_, _ int) {
-}
-
-func (m *questlogModel) GetCursor() (int, int, bool, bool) {
-	return 0, 0, false, true
-}
-
-func (m *questlogModel) SetCursor(_, _ int) {
-}
-
-func (m *questlogModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
-	var ch rune
-	if y >= len(m.items) {
-		return ch, DefaultStyle, nil, 1
-	}
-	item := m.items[y]
-
-	if x >= len(item) {
-		return ch, DefaultStyle, nil, 1
-	}
-
-	return rune(item[x]), Green, nil, 1
-}
-
-type dungeonModel struct {
-	game            *game.State
-	highlightPlayer bool
-}
-
-func (m *dungeonModel) GetBounds() (int, int) {
-	return m.game.GetMapDimensions()
-}
-
-func (m *dungeonModel) MoveCursor(offX, offY int) {
-	m.game.EventChannel <- events.Movement{
-		OffX: offX,
-		OffY: offY,
-	}
-}
-
-func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
-	playerX, playerY := m.game.GetPlayerPos()
-	return playerX, playerY, true, m.highlightPlayer
-}
-
-func (m *dungeonModel) SetCursor(x int, y int) {
-	curX, curY := m.game.GetPlayerPos()
-	diffX := curX - x
-	diffY := curY - y
-	m.MoveCursor(diffX, diffY)
-}
-
-func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
-	tile, err := m.game.GetMapTile(x, y)
-	if err != nil {
-		return ' ', DefaultStyle, nil, 1
-	}
-	return tile.Rune(), runeToStyle(tile.Rune()), nil, 1
-}
-
 type Display struct {
 	mainWin *mainWindow
 	app     *views.Application
@@ -178,56 +104,7 @@ func New(g *game.State) (*Display, error) {
 		},
 		questlogModel: &questlogModel{
 			width: mapWidth,
-			items: []string{
-				"You were eaten by a grue.",
-				"A pox on your soul was lifted.",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"You are now a chicken",
-				"and I am too",
-			},
+			log:   g.QuestLog(),
 		},
 	}
 

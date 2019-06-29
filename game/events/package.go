@@ -12,3 +12,7 @@ type Movement struct {
 type KeyPress struct {
 	Key rune
 }
+
+type QuestlogUpdate struct {
+	Len int
+}
