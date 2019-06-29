@@ -25,7 +25,7 @@ func NewGame() *State {
 	return &State{
 		EventChannel: make(chan events.Event, 32),
 
-		mapp: dungeon.One,
+		mapp: dungeon.GenerateMap(1337, 16, 16),
 		log:  QuestLog{},
 		player: Player{
 			x: 1,

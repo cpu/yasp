@@ -1,5 +1,6 @@
 package dungeon
 
+/*
 var (
 	One = Map{
 		Width:  32,
@@ -40,3 +41,4 @@ var (
 		},
 	}
 )
+*/
