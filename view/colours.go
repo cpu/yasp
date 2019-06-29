@@ -1,6 +1,9 @@
 package view
 
-import "github.com/gdamore/tcell"
+import (
+	"github.com/cpu/yasp/dungeon"
+	"github.com/gdamore/tcell"
+)
 
 var (
 	DefaultStyle = tcell.StyleDefault.
@@ -23,13 +26,13 @@ var (
 func runeToStyle(r rune) tcell.Style {
 	var style tcell.Style
 	switch r {
-	case '.':
+	case dungeon.GroundTile.Rune():
 		style = Green
-	case '#':
+	case dungeon.WallTile.Rune():
 		style = Chocolate
-	case '~':
+	case dungeon.MossTile.Rune():
 		style = PaleGreen
-	case '=':
+	case dungeon.StumpTile.Rune():
 		style = Brown
 	default:
 		style = DefaultStyle
