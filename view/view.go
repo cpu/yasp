@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cpu/yasp/dungeon"
 	"github.com/cpu/yasp/game"
 	"github.com/cpu/yasp/game/events"
 	"github.com/gdamore/tcell"
@@ -74,7 +73,7 @@ type dungeonModel struct {
 }
 
 func (m *dungeonModel) GetBounds() (int, int) {
-	return m.game.Map.Dimensions()
+	return m.game.GetMapDimensions()
 }
 
 func (m *dungeonModel) MoveCursor(offX, offY int) {
@@ -85,44 +84,23 @@ func (m *dungeonModel) MoveCursor(offX, offY int) {
 }
 
 func (m *dungeonModel) GetCursor() (int, int, bool, bool) {
-	playerX, playerY := m.game.P.Pos()
+	playerX, playerY := m.game.GetPlayerPos()
 	return playerX, playerY, true, m.highlightPlayer
 }
 
 func (m *dungeonModel) SetCursor(x int, y int) {
-	curX, curY := m.game.P.Pos()
+	curX, curY := m.game.GetPlayerPos()
 	diffX := curX - x
 	diffY := curY - y
 	m.MoveCursor(diffX, diffY)
 }
 
 func (m *dungeonModel) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
-	var ch rune
-	if x >= m.game.Map.Width || y >= m.game.Map.Height {
-		return ch, DefaultStyle, nil, 1
+	tile, err := m.game.GetMapTile(x, y)
+	if err != nil {
+		return ' ', DefaultStyle, nil, 1
 	}
-	playerX, playerY := m.game.P.Pos()
-	var tile dungeon.Tile
-	if x == playerX && y == playerY {
-		tile = dungeon.PlayerTile
-	} else {
-		index := x + (y * m.game.Map.Width)
-		tile = dungeon.LookupTile(m.game.Map.Tiles[index])
-	}
-	var style tcell.Style
-	switch label := tile.String(); label {
-	case ".":
-		style = Green
-	case "#":
-		style = Chocolate
-	case "~":
-		style = PaleGreen
-	case "=":
-		style = Brown
-	default:
-		style = DefaultStyle
-	}
-	return rune(tile.String()[0]), style, nil, 1
+	return tile.Rune(), runeToStyle(tile.Rune()), nil, 1
 }
 
 type Display struct {
@@ -162,7 +140,7 @@ func (win *mainWindow) HandleEvent(ev tcell.Event) bool {
 }
 
 func (win *mainWindow) Draw() {
-	win.status.SetLeft(win.dungeonModel.game.P.String())
+	win.status.SetLeft("TODO")
 	win.Panel.Draw()
 }
 
@@ -189,6 +167,8 @@ func (d *Display) RunForever() {
 func New(g *game.State) (*Display, error) {
 	d := &Display{}
 
+	mapWidth, _ := g.GetMapDimensions()
+
 	app := &views.Application{}
 	window := &mainWindow{
 		display:       d,
@@ -197,7 +177,7 @@ func New(g *game.State) (*Display, error) {
 			game: g,
 		},
 		questlogModel: &questlogModel{
-			width: g.Map.Width,
+			width: mapWidth,
 			items: []string{
 				"You were eaten by a grue.",
 				"A pox on your soul was lifted.",

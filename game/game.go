@@ -3,6 +3,7 @@ package game
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/cpu/yasp/dungeon"
 	"github.com/cpu/yasp/game/events"
@@ -67,23 +68,58 @@ func (p *Player) String() string {
 }
 
 type State struct {
-	Debug bool
-	P     Player
-	Map   dungeon.Map
-
+	Debug        bool
 	EventChannel chan events.Event
+
+	mapp   dungeon.Map
+	player Player
+
+	sync.RWMutex
 }
 
 func NewGame() *State {
 	return &State{
-		P: Player{
+		EventChannel: make(chan events.Event, 8),
+
+		mapp: dungeon.One,
+		player: Player{
 			x: 1,
 			y: 1,
 		},
-		Map: dungeon.One,
-
-		EventChannel: make(chan events.Event, 8),
 	}
+}
+
+func (s *State) GetPlayerPos() (int, int) {
+	s.RLock()
+	defer s.RUnlock()
+
+	return s.player.Pos()
+}
+
+func (s *State) GetMapDimensions() (int, int) {
+	s.RLock()
+	defer s.RUnlock()
+
+	return s.mapp.Dimensions()
+}
+
+func (s *State) GetMapTile(x, y int) (dungeon.Tile, error) {
+	s.RLock()
+	defer s.RUnlock()
+
+	var tile dungeon.Tile
+	maxX, maxY := s.GetMapDimensions()
+	if x < 0 || x >= maxX || y < 0 || y >= maxY {
+		return tile, fmt.Errorf("provided x,y (%d,%d) is outside of map bounds (%d, %d)",
+			x, y, maxX, maxY)
+	}
+	playerX, playerY := s.GetPlayerPos()
+	if x == playerX && y == playerY {
+		tile = dungeon.PlayerTile
+	} else {
+		tile = s.mapp.GetTile(x, y)
+	}
+	return tile, nil
 }
 
 func (s *State) RunForever() {
@@ -91,8 +127,10 @@ func (s *State) RunForever() {
 		for e := range s.EventChannel {
 			switch v := e.(type) {
 			case events.Movement:
-				s.P.Move(v.OffX, v.OffY)
-				s.P.Clamp(s.Map.Width, s.Map.Height)
+				s.Lock()
+				s.player.Move(v.OffX, v.OffY)
+				s.player.Clamp(s.mapp.Width, s.mapp.Height)
+				s.Unlock()
 			case events.KeyPress:
 				fmt.Printf("\nPressed %s\n", string(v.Key))
 			}

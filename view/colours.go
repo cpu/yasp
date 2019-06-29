@@ -19,3 +19,20 @@ var (
 		Foreground(tcell.ColorBrown).
 		Background(tcell.ColorBlack)
 )
+
+func runeToStyle(r rune) tcell.Style {
+	var style tcell.Style
+	switch r {
+	case '.':
+		style = Green
+	case '#':
+		style = Chocolate
+	case '~':
+		style = PaleGreen
+	case '=':
+		style = Brown
+	default:
+		style = DefaultStyle
+	}
+	return style
+}
